@@ -1,0 +1,15 @@
+# docker-compose.yml
+
+version: '3.8'
+
+services:
+  web:
+    build: .
+    command: uvicorn src.main:app --host 0.0.0.0 --reload
+    ports:
+      - 8008:8000
+    networks:
+      - elasticsearch-net
+
+networks:
+  elasticsearch-net:

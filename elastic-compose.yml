@@ -1,0 +1,26 @@
+version: "3.9"
+services:
+  elasticsearch:
+    image: elasticsearch:8.2.2
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - xpack.security.enabled=false
+      - cluster.name=${CLUSTERNAME}
+      - node.name=${NODENAME}
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    ports:
+      - target: 9200
+        published: 9200
+    networks:
+      - elasticsearch-net  
+
+volumes:
+  es_data:
+    driver: local
+
+networks:
+  elasticsearch-net:
+    name: elasticsearch-net
+    driver: bridge
