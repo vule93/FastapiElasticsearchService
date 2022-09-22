@@ -1,12 +1,4 @@
-# from fastapi.middleware.cors import CORSMiddleware
-from dataclasses import fields
-from http import client
-from operator import index
-from symbol import parameters
-from urllib import request
-from fastapi import FastAPI, Request
-from pydantic import BaseModel, Field
-from typing import Optional
+from fastapi import FastAPI
 from faker import Faker
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import streaming_bulk
@@ -16,7 +8,7 @@ from typing import Union
 from dotenv import load_dotenv
 import boto3
 import csv
-from elasticsearch_dsl import Q, Search
+from elasticsearch_dsl import Search
 from elasticsearch_dsl.query import MultiMatch
 from io import StringIO
 import logging
@@ -27,11 +19,8 @@ load_dotenv()
 
 app = FastAPI(debug=True)
 
+# Reads the csv file from S3 bucket and for each row yields a single document.
 def generate_actions():
-    """Reads the file through csv.DictReader() and for each row
-    yields a single document. This function is passed into the bulk()
-    helper to create many documents in sequence.
-    """
     s3 = boto3.client(
         's3',
         aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
@@ -143,13 +132,13 @@ async def getData():
 # Search users by their first_name, last_name, address, email and user_id
 @app.get("/search")
 async def getDataByFirstName(value_to_search: Union[str, None] = None):
+    result = {"results":[]}
+    if not value_to_search:
+        return result
     client = Elasticsearch([{'host': os.getenv("HOSTNAME_ELASTICSEARCH"), 'port': os.getenv("ELASTICSEARCH_PORT"),
                              'scheme': os.getenv("ELASTICSEARCH_SCHEME")}])
     client.indices.refresh(index="users")
     query = MultiMatch(query=value_to_search, fields=['first_name', 'last_name', 'email', 'address', 'user_id'])
-    result = {"results":[]}
-    if not value_to_search:
-        return result
     s = Search(using=client, index="users").query(query)
     response = s.execute()
     for hit in response:
